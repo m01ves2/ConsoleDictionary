@@ -1,12 +1,6 @@
 ﻿using ConsoleDictionary.Managers;
-using Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
+using ConsoleDictionary.Entities;
+using ConsoleDictionary.Helpers;
 
 namespace ConsoleDictionary
 {
@@ -14,6 +8,7 @@ namespace ConsoleDictionary
     {
         private readonly Trainer _trainer;
         private readonly DictionaryManager _dictionaryManager;
+        private readonly string _path = @"words.json";
         public ConsoleApp()
         {
             var words = FillWordList();
@@ -26,7 +21,7 @@ namespace ConsoleDictionary
             bool isQuit = false;
             while (!isQuit) {
                 PrintMenu();
-                string input = Console.ReadLine().Trim().ToLower();
+                string input = Console.ReadLine() ?? "".Trim().ToLower();
 
                 switch (input) {
                     case "a": AddWord();
@@ -54,11 +49,15 @@ namespace ConsoleDictionary
                         Pause();
                         break;
 
-                    case "q": SaveWords();
+                    case "q":
+                        if (_dictionaryManager.IsModified) {
+                            SaveWords();
+                        }
                         isQuit = true;
                         break;
 
-                    default: Console.WriteLine("Unexpected input...");
+                    default:
+                        ConsoleHelper.PrintError("Unexpected input...");
                         Pause();
                         break;
                 }
@@ -68,7 +67,7 @@ namespace ConsoleDictionary
 
         private void Pause()
         {
-            Console.WriteLine("Press any key to continue.");
+            ConsoleHelper.PrintNormal("Press any key to continue.");
             Console.ReadKey();
         }
 
@@ -76,13 +75,13 @@ namespace ConsoleDictionary
         {
             Word word;
 
-            Console.WriteLine("Input Word Text:");
-            string Text = Console.ReadLine();
+            ConsoleHelper.PrintNormal("Input Word Text:");
+            string Text = Console.ReadLine() ?? "";
 
-            Console.WriteLine("Input Translations (q - quit):");
+            ConsoleHelper.PrintNormal("Input Translations (q - quit):");
             List<string> translations = new List<string>();
             while(true){
-                string translation = Console.ReadLine();
+                string translation = Console.ReadLine() ?? "";
 
                 if(string.Equals(translation, "q", StringComparison.OrdinalIgnoreCase)) {
                     break;
@@ -90,30 +89,31 @@ namespace ConsoleDictionary
 
                 if (!string.IsNullOrEmpty(translation))
                     translations.Add(translation);
-                else { 
-                    Console.WriteLine("Empty string. skipped."); 
+                else {
+                    ConsoleHelper.PrintError("Empty string. skipped."); 
                 }
             }
 
-            Console.WriteLine("Input category:");
-            string category = Console.ReadLine();
+            ConsoleHelper.PrintNormal("Input category:");
+            string category = Console.ReadLine() ?? "";
 
             word = new Word(Text, translations, category);
             _dictionaryManager.AddWord(word);
         }
         private void DeleteWord()
         {
-            Console.WriteLine("Input word to delete:");
-            string text = Console.ReadLine();
+            ConsoleHelper.PrintNormal("Input word to delete:");
+            string text = Console.ReadLine() ?? "";
             if (!string.IsNullOrEmpty(text))
                 _dictionaryManager.DeleteWord(text);
             else {
-                Console.WriteLine("Empty word. Nothing to delete");
+                ConsoleHelper.PrintError("Empty word. Nothing to delete");
             }
         }
         private void ListWords()
         {
-            _dictionaryManager.GetAllWords().ForEach(w =>  Console.WriteLine(w.ToString()));
+            _dictionaryManager.GetAllWords().ForEach(w =>  ConsoleHelper.PrintNormal("==========" + w.ToString()));
+            ConsoleHelper.PrintSuccess("Total: " + _dictionaryManager.GetAllWords().Count + " words.");
         }
         private void Train()
         {
@@ -125,24 +125,27 @@ namespace ConsoleDictionary
         }
         private void LoadWords()
         {
-            throw new NotImplementedException();
+            _dictionaryManager.LoadFromFile(_path);
         }
         private void SaveWords()
         {
-            //throw new NotImplementedException();
+            ConsoleHelper.PrintWarning("Your dictionary has been changed! Would you like to save it in file (y/n) ?");
+            if ((Console.ReadLine() ?? "").ToLower() == "y") {
+                _dictionaryManager.SaveToFile(_path);
+            }
         }
 
         private void PrintMenu()
         {
             Console.Clear();
-            Console.WriteLine("Please, choose option:");
-            Console.WriteLine("a - add word");
-            Console.WriteLine("d - delete word");
-            Console.WriteLine("w - list of words");
-            Console.WriteLine("t - train");
-            Console.WriteLine("s - get statistics");
-            Console.WriteLine("l - get words from file");
-            Console.WriteLine("q - save and quit");
+            ConsoleHelper.PrintNormal("Please, choose option:" +
+                                      "\na - add word" +
+                                      "\nd - delete word" +
+                                      "\nw - list of words" +
+                                      "\nt - train" +
+                                      "\ns - get statistics" +
+                                      "\nl - get words from file" +
+                                      "\nq - quit");
         }
 
         private List<Word> FillWordList()

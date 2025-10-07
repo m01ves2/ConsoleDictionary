@@ -1,13 +1,9 @@
-﻿using Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ConsoleDictionary.Entities;
+using ConsoleDictionary.Helpers;
 
 namespace ConsoleDictionary.Managers
 {
-    internal class Trainer
+    public class Trainer
     {
         private DictionaryManager _dictionary;
         private readonly Random _random;
@@ -40,28 +36,28 @@ namespace ConsoleDictionary.Managers
             var words = _dictionary.GetAllWords().OrderBy(w => _random.Next()).ToList();
 
             foreach (var word in words) {
-                Console.WriteLine($"Translate word (q - to quit): {word.Text}");
-                var answer = Console.ReadLine().ToLower();
+                ConsoleHelper.PrintNormal($"Translate word (q - to quit): {word.Text}");
+                var answer = (Console.ReadLine() ?? "").ToLower();
 
                 if (answer == "q") {
-                    Console.WriteLine("Training has finished. Quit...");
+                    ConsoleHelper.PrintWarning("Training has finished. Quit...");
                     break;
                 }
 
                 if (CheckAnswer(word, answer)) {
-                    Console.WriteLine("✅ Right!");
+                    ConsoleHelper.PrintSuccess("✅ Right!");
                 }
                 else {
-                    Console.WriteLine($"❌ Wrong. Correct answer: {string.Join(", ", word.Translations)}");
+                    ConsoleHelper.PrintError($"❌ Wrong. Correct answer: {string.Join(", ", word.Translations)}");
                 }
             }
         }
 
         public void PrintStatistics()
         {
-            Console.WriteLine("\nStatistics: [word] - correct | wrong");
+            ConsoleHelper.PrintWarning("\nStatistics: [word] - correct | wrong");
             _dictionary.GetAllWords().ForEach(
-                word => Console.WriteLine($"{word.Text} — {word.CorrectCount} | {word.WrongCount}"));
+                word => ConsoleHelper.PrintNormal($"{word.Text} — {word.CorrectCount} | {word.WrongCount}"));
         }
     }
 }

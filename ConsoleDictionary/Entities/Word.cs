@@ -1,6 +1,6 @@
-namespace Entities
+namespace ConsoleDictionary.Entities
 {
-    class Word
+    public class Word
     {
         public string Text { get; set; }
         public List<string> Translations { get; set; } = new();
