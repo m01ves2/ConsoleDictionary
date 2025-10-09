@@ -1,10 +1,6 @@
 ﻿using ConsoleDictionary.Entities;
 using ConsoleDictionary.Managers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using ConsoleDictionary.Repositories;
 
 namespace ConsoleDictionary.tests
 {
@@ -14,8 +10,8 @@ namespace ConsoleDictionary.tests
         public void CheckAnswer_ShouldReturnTrue_IfTranslationMatches()
         {
             var word = new Word("apple", new List<string> { "яблоко" });
-            var manager = new DictionaryManager(new List<Word> { word });
-            var trainer = new Trainer(manager);
+            var repository = new FileWordRepository(new List<Word> { word });
+            var trainer = new Trainer(repository);
 
             bool result = trainer.CheckAnswer(word, "яблоко");
 
