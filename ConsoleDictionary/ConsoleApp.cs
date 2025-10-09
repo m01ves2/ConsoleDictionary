@@ -10,12 +10,14 @@ namespace ConsoleDictionary
     {
         private readonly Trainer _trainer;
         private readonly IWordRepository _repository;
+        private readonly IConsole _console;
         private readonly string _path = @"words.json";
         public ConsoleApp()
         {
             var words = FillWordList();
             _repository = new FileWordRepository(words);
             _trainer = new Trainer(_repository);
+            _console = new ConsoleHelper();
         }
 
         public void Run()
@@ -65,7 +67,7 @@ namespace ConsoleDictionary
                         break;
 
                     default:
-                        ConsoleHelper.PrintError("Unexpected input...");
+                        _console.PrintError("Unexpected input...");
                         Pause();
                         break;
                 }
@@ -75,7 +77,7 @@ namespace ConsoleDictionary
 
         private void Pause()
         {
-            ConsoleHelper.PrintNormal("Press any key to continue.");
+            _console.PrintNormal("Press any key to continue.");
             Console.ReadKey();
         }
 
@@ -83,10 +85,10 @@ namespace ConsoleDictionary
         {
             Word word;
 
-            ConsoleHelper.PrintNormal("Input Word Text:");
+            _console.PrintNormal("Input Word Text:");
             string Text = Console.ReadLine() ?? "";
 
-            ConsoleHelper.PrintNormal("Input Translations (q - quit):");
+            _console.PrintNormal("Input Translations (q - quit):");
             List<string> translations = new List<string>();
             while(true){
                 string translation = Console.ReadLine() ?? "";
@@ -98,11 +100,11 @@ namespace ConsoleDictionary
                 if (!string.IsNullOrEmpty(translation))
                     translations.Add(translation);
                 else {
-                    ConsoleHelper.PrintError("Empty string. skipped."); 
+                    _console.PrintError("Empty string. skipped."); 
                 }
             }
 
-            ConsoleHelper.PrintNormal("Input category:");
+            _console.PrintNormal("Input category:");
             string category = Console.ReadLine() ?? "";
 
             word = new Word(Text, translations, category);
@@ -110,18 +112,18 @@ namespace ConsoleDictionary
         }
         private void DeleteWord()
         {
-            ConsoleHelper.PrintNormal("Input word to delete:");
+            _console.PrintNormal("Input word to delete:");
             string text = Console.ReadLine() ?? "";
             if (!string.IsNullOrEmpty(text))
                 _repository.Delete(text);
             else {
-                ConsoleHelper.PrintError("Empty word. Nothing to delete");
+                _console.PrintError("Empty word. Nothing to delete");
             }
         }
         private void ListWords()
         {
-            _repository.GetAll().ToList().ForEach(w =>  ConsoleHelper.PrintNormal("==========" + w.ToString()));
-            ConsoleHelper.PrintSuccess("Total: " + _repository.GetAll().Count + " words.");
+            _repository.GetAll().ToList().ForEach(w => _console.PrintNormal("==========" + w.ToString()));
+            _console.PrintSuccess("Total: " + _repository.GetAll().Count + " words.");
         }
         private void Train()
         {
@@ -137,7 +139,7 @@ namespace ConsoleDictionary
         }
         private void SaveWords()
         {
-            ConsoleHelper.PrintWarning("Your dictionary has been changed! Would you like to save it in file (y/n) ?");
+            _console.PrintWarning("Your dictionary has been changed! Would you like to save it in file (y/n) ?");
             if ((Console.ReadLine() ?? "").ToLower() == "y") {
                 _repository.Save(_path);
             }
@@ -146,7 +148,7 @@ namespace ConsoleDictionary
         private void PrintMenu()
         {
             Console.Clear();
-            ConsoleHelper.PrintNormal("Please, choose option:" +
+            _console.PrintNormal("Please, choose option:" +
                                       "\na - add word" +
                                       "\nd - delete word" +
                                       "\nl - list of words" +

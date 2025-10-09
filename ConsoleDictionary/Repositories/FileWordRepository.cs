@@ -1,6 +1,7 @@
 ﻿using ConsoleDictionary.Entities;
 using ConsoleDictionary.Helpers;
 using ConsoleDictionary.Interfaces;
+using System;
 using System.Text.Json;
 
 namespace ConsoleDictionary.Repositories
@@ -9,6 +10,7 @@ namespace ConsoleDictionary.Repositories
     {
         private readonly List<Word> _words; //we can only read this list outside
         private bool _isModified = false;
+        private readonly IConsole _console;
 
         public bool IsModified
         {
@@ -18,12 +20,14 @@ namespace ConsoleDictionary.Repositories
         public FileWordRepository()
         {
             this._words = new List<Word>();
-            _isModified = true;
+            _console = new ConsoleHelper();
+            _isModified = false;
         }
 
         public FileWordRepository(List<Word> words)
         {
             this._words = new List<Word>(words);
+            _console = new ConsoleHelper();
             _isModified = true;
         }
 
@@ -55,7 +59,7 @@ namespace ConsoleDictionary.Repositories
         public void Load(string path)
         {
             if (!File.Exists(path)) {
-                ConsoleHelper.PrintError("File not found. ");
+                _console.PrintError("File not found. ");
                 return;
             }
 
@@ -65,11 +69,11 @@ namespace ConsoleDictionary.Repositories
                 _words.Clear();
                 _words.AddRange(loaded);
                 _isModified = false;
-                ConsoleHelper.PrintSuccess($"Dictionary read from file. Total {_words.Count} words");
+                _console.PrintSuccess($"Dictionary read from file. Total {_words.Count} words");
 
             }
             catch (Exception ex) {
-                ConsoleHelper.PrintError($"Failed to load dictionary: {ex.Message}");
+                _console.PrintError($"Failed to load dictionary: {ex.Message}");
                 //_words = new List<Word>();
             }
         }
@@ -84,10 +88,10 @@ namespace ConsoleDictionary.Repositories
             try {
                 var json = JsonSerializer.Serialize(this._words, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(path, json);
-                ConsoleHelper.PrintSuccess("Dictionary saved to file.");
+                _console.PrintSuccess("Dictionary saved to file.");
             }
             catch (Exception ex) {
-                ConsoleHelper.PrintError($"Failed to save dictionary: {ex.Message}");
+                _console.PrintError($"Failed to save dictionary: {ex.Message}");
             }
         }
     }

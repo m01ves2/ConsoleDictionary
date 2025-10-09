@@ -1,6 +1,7 @@
 ﻿using ConsoleDictionary.Entities;
 using ConsoleDictionary.Helpers;
 using ConsoleDictionary.Interfaces;
+using System;
 
 namespace ConsoleDictionary.Managers
 {
@@ -8,10 +9,12 @@ namespace ConsoleDictionary.Managers
     {
         private IWordRepository _repository;
         private readonly Random _random;
+        private readonly IConsole _console;
         public Trainer(IWordRepository repository)
         {
             this._repository = repository;
             _random = new Random();
+            _console = new ConsoleHelper();
         }
         public Word? GetRandomWord()
         {
@@ -37,28 +40,28 @@ namespace ConsoleDictionary.Managers
             var words = _repository.GetAll().OrderBy(w => _random.Next()).ToList();
 
             foreach (var word in words) {
-                ConsoleHelper.PrintNormal($"Translate word (q - to quit): {word.Text}");
+                _console.PrintNormal($"Translate word (q - to quit): {word.Text}");
                 var answer = (Console.ReadLine() ?? "").ToLower();
 
                 if (answer == "q") {
-                    ConsoleHelper.PrintWarning("Training has finished. Quit...");
+                    _console.PrintWarning("Training has finished. Quit...");
                     break;
                 }
 
                 if (CheckAnswer(word, answer)) {
-                    ConsoleHelper.PrintSuccess("✅ Right!");
+                    _console.PrintSuccess("✅ Right!");
                 }
                 else {
-                    ConsoleHelper.PrintError($"❌ Wrong. Correct answer: {string.Join(", ", word.Translations)}");
+                    _console.PrintError($"❌ Wrong. Correct answer: {string.Join(", ", word.Translations)}");
                 }
             }
         }
 
         public void PrintStatistics()
         {
-            ConsoleHelper.PrintWarning("\nStatistics: [word] - correct | wrong");
+            _console.PrintWarning("\nStatistics: [word] - correct | wrong");
             _repository.GetAll().ToList().ForEach(
-                word => ConsoleHelper.PrintNormal($"{word.Text} — {word.CorrectCount} | {word.WrongCount}"));
+                word => _console.PrintNormal($"{word.Text} — {word.CorrectCount} | {word.WrongCount}"));
         }
     }
 }
