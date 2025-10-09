@@ -1,19 +1,21 @@
 ﻿using ConsoleDictionary.Managers;
 using ConsoleDictionary.Entities;
 using ConsoleDictionary.Helpers;
+using ConsoleDictionary.Interfaces;
+using ConsoleDictionary.Repositories;
 
 namespace ConsoleDictionary
 {
     public class ConsoleApp
     {
         private readonly Trainer _trainer;
-        private readonly DictionaryManager _dictionaryManager;
+        private readonly IWordRepository _repository;
         private readonly string _path = @"words.json";
         public ConsoleApp()
         {
             var words = FillWordList();
-            _dictionaryManager = new DictionaryManager(words);
-            _trainer = new Trainer(_dictionaryManager);
+            _repository = new FileWordRepository(words);
+            _trainer = new Trainer(_repository);
         }
 
         public void Run()
@@ -32,7 +34,7 @@ namespace ConsoleDictionary
                         Pause();
                         break;
 
-                    case "w": ListWords();
+                    case "l": ListWords();
                         Pause();
                         break;
 
@@ -45,12 +47,18 @@ namespace ConsoleDictionary
                         Pause();
                         break;
 
-                    case "l": LoadWords();
+                    case "r": LoadWords();
                         Pause();
                         break;
 
+                    case "w":
+                        if (_repository.IsModified) {
+                            SaveWords();
+                        }
+                        break;
+
                     case "q":
-                        if (_dictionaryManager.IsModified) {
+                        if (_repository.IsModified) {
                             SaveWords();
                         }
                         isQuit = true;
@@ -98,22 +106,22 @@ namespace ConsoleDictionary
             string category = Console.ReadLine() ?? "";
 
             word = new Word(Text, translations, category);
-            _dictionaryManager.AddWord(word);
+            _repository.Add(word);
         }
         private void DeleteWord()
         {
             ConsoleHelper.PrintNormal("Input word to delete:");
             string text = Console.ReadLine() ?? "";
             if (!string.IsNullOrEmpty(text))
-                _dictionaryManager.DeleteWord(text);
+                _repository.Delete(text);
             else {
                 ConsoleHelper.PrintError("Empty word. Nothing to delete");
             }
         }
         private void ListWords()
         {
-            _dictionaryManager.GetAllWords().ForEach(w =>  ConsoleHelper.PrintNormal("==========" + w.ToString()));
-            ConsoleHelper.PrintSuccess("Total: " + _dictionaryManager.GetAllWords().Count + " words.");
+            _repository.GetAll().ToList().ForEach(w =>  ConsoleHelper.PrintNormal("==========" + w.ToString()));
+            ConsoleHelper.PrintSuccess("Total: " + _repository.GetAll().Count + " words.");
         }
         private void Train()
         {
@@ -125,13 +133,13 @@ namespace ConsoleDictionary
         }
         private void LoadWords()
         {
-            _dictionaryManager.LoadFromFile(_path);
+            _repository.Load(_path);
         }
         private void SaveWords()
         {
             ConsoleHelper.PrintWarning("Your dictionary has been changed! Would you like to save it in file (y/n) ?");
             if ((Console.ReadLine() ?? "").ToLower() == "y") {
-                _dictionaryManager.SaveToFile(_path);
+                _repository.Save(_path);
             }
         }
 
@@ -141,10 +149,11 @@ namespace ConsoleDictionary
             ConsoleHelper.PrintNormal("Please, choose option:" +
                                       "\na - add word" +
                                       "\nd - delete word" +
-                                      "\nw - list of words" +
+                                      "\nl - list of words" +
                                       "\nt - train" +
                                       "\ns - get statistics" +
-                                      "\nl - get words from file" +
+                                      "\nr - read words from file" +
+                                      "\nw - write words to file" +
                                       "\nq - quit");
         }
 

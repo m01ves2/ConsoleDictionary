@@ -1,20 +1,21 @@
 ﻿using ConsoleDictionary.Entities;
 using ConsoleDictionary.Helpers;
+using ConsoleDictionary.Interfaces;
 
 namespace ConsoleDictionary.Managers
 {
     public class Trainer
     {
-        private DictionaryManager _dictionary;
+        private IWordRepository _repository;
         private readonly Random _random;
-        public Trainer(DictionaryManager dictionary)
+        public Trainer(IWordRepository repository)
         {
-            this._dictionary = dictionary;
+            this._repository = repository;
             _random = new Random();
         }
         public Word? GetRandomWord()
         {
-            var randomWord = _dictionary.GetAllWords()
+            var randomWord = _repository.GetAll()
                     .OrderBy(w => _random.Next())
                     .FirstOrDefault();
             return randomWord;
@@ -33,7 +34,7 @@ namespace ConsoleDictionary.Managers
 
         internal void StartTraining()
         {
-            var words = _dictionary.GetAllWords().OrderBy(w => _random.Next()).ToList();
+            var words = _repository.GetAll().OrderBy(w => _random.Next()).ToList();
 
             foreach (var word in words) {
                 ConsoleHelper.PrintNormal($"Translate word (q - to quit): {word.Text}");
@@ -56,7 +57,7 @@ namespace ConsoleDictionary.Managers
         public void PrintStatistics()
         {
             ConsoleHelper.PrintWarning("\nStatistics: [word] - correct | wrong");
-            _dictionary.GetAllWords().ForEach(
+            _repository.GetAll().ToList().ForEach(
                 word => ConsoleHelper.PrintNormal($"{word.Text} — {word.CorrectCount} | {word.WrongCount}"));
         }
     }
