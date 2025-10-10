@@ -20,7 +20,7 @@ namespace ConsoleDictionary.Entities
         public override string ToString()
         {
             return "\nText: " + Text +
-                   "\nTranslations:" + string.Join(",\n ", Translations) +
+                   "\nTranslations:" + string.Join(", ", Translations) +
                    "\nCategory:" + Category;
         }
     }

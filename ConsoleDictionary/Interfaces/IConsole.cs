@@ -12,5 +12,6 @@ namespace ConsoleDictionary.Interfaces
         void PrintSuccess(string text);
         void PrintWarning(string text);
         void PrintNormal(string text);
+        string ReadLine();
     }
 }

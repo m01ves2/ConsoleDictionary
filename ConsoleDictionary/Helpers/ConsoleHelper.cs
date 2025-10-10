@@ -58,5 +58,10 @@ namespace ConsoleDictionary.Helpers
         {
             Print(message, Console.ForegroundColor);
         }
+
+        public string ReadLine()
+        {
+            return Console.ReadLine() ?? "";
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ConsoleDictionary.Entities;
+using ConsoleDictionary.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,14 +11,12 @@ namespace ConsoleDictionary.Interfaces
     public interface IWordRepository
     {
         bool IsModified { get; }
-        void Add(Word word);
-        void Delete(string text);
+        OperationResult Add(Word word);
+        OperationResult Delete(string text);
+        OperationResult Update(Word oldWord, Word newWord);
         Word? Find(string text);
-
-        //void Update(Word oldWord, Word newWord);
-        
         IReadOnlyList<Word> GetAll();
-        void Save(string path);
-        void Load(string path);
+        OperationResult Save(string path);
+        OperationResult Load(string path);
     }
 }

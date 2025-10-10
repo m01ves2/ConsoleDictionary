@@ -41,7 +41,7 @@ namespace ConsoleDictionary.Managers
 
             foreach (var word in words) {
                 _console.PrintNormal($"Translate word (q - to quit): {word.Text}");
-                var answer = (Console.ReadLine() ?? "").ToLower();
+                var answer = _console.ReadLine().ToLower();
 
                 if (answer == "q") {
                     _console.PrintWarning("Training has finished. Quit...");

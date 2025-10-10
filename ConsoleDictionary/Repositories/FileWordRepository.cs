@@ -1,8 +1,8 @@
 ﻿using ConsoleDictionary.Entities;
-using ConsoleDictionary.Helpers;
 using ConsoleDictionary.Interfaces;
-using System;
+using ConsoleDictionary.Helpers;
 using System.Text.Json;
+using System.Runtime.InteropServices;
 
 namespace ConsoleDictionary.Repositories
 {
@@ -10,7 +10,6 @@ namespace ConsoleDictionary.Repositories
     {
         private readonly List<Word> _words; //we can only read this list outside
         private bool _isModified = false;
-        private readonly IConsole _console;
 
         public bool IsModified
         {
@@ -20,27 +19,52 @@ namespace ConsoleDictionary.Repositories
         public FileWordRepository()
         {
             this._words = new List<Word>();
-            _console = new ConsoleHelper();
             _isModified = false;
         }
 
         public FileWordRepository(List<Word> words)
         {
             this._words = new List<Word>(words);
-            _console = new ConsoleHelper();
+            _isModified = false;
+        }
+
+        public OperationResult Add(Word word)
+        {
+            // looking for this word in dictionary
+            var existingWord = _words.FirstOrDefault(w => w.Text.Equals(word.Text, StringComparison.OrdinalIgnoreCase));
+
+            if (existingWord != null) { //found this word in dictionary
+                // unit translations
+                var newTranslations = word.Translations
+                    .Where(t => !existingWord.Translations.Any(et => et.Equals(t, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+
+                if (newTranslations.Count > 0) {
+                    existingWord.Translations.AddRange(newTranslations);
+                    _isModified = true;
+                    return new OperationResult(true, $"Word '{word.Text}' exists. Added {newTranslations.Count} new translations.", _words.Count);
+                }
+                else {
+                    return new OperationResult(true, $"Word '{word.Text}' exists. No new translations added.", _words.Count);
+                }
+            }
+
+            // a new word, no in dictionary
+            _words.Add(word);
             _isModified = true;
+            return new OperationResult(true, $"Word '{word.Text}' added with {word.Translations.Count} translations.", _words.Count);
         }
 
-        public void Add(Word word)
+        public OperationResult Delete(string text)
         {
-            this._words.Add(word);
-            this._isModified = true;
-        }
-
-        public void Delete(string text)
-        {
-            if(_words.RemoveAll(w => w.Text.Equals(text, StringComparison.OrdinalIgnoreCase)) > 0)
+            if (_words.RemoveAll(w => w.Text.Equals(text, StringComparison.OrdinalIgnoreCase)) > 0) {
                 _isModified = true;
+                return new OperationResult(true, $"Found and deleted word \"{text}\"");
+            }
+            else {
+                return new OperationResult(true, "Word \"{text}\" not found");
+            }
+            
         }
         public Word? Find(string text)
         {
@@ -56,25 +80,29 @@ namespace ConsoleDictionary.Repositories
         /// </summary>
         /// <param name="path"></param>
         /// <returns>true - success, false - failure</returns>
-        public void Load(string path)
+        public OperationResult Load(string path)
         {
             if (!File.Exists(path)) {
-                _console.PrintError("File not found. ");
-                return;
+                return new OperationResult(false, "File not found.");
             }
 
             try {
                 var json = File.ReadAllText(path);
                 var loaded = (JsonSerializer.Deserialize<List<Word>>(json) ?? new List<Word>());
-                _words.Clear();
-                _words.AddRange(loaded);
-                _isModified = false;
-                _console.PrintSuccess($"Dictionary read from file. Total {_words.Count} words");
 
+
+                if (loaded.Count == 0) {
+                    return new OperationResult(false, "Empty file. No words added.");
+                }
+                else {
+                    _words.Clear();
+                    _words.AddRange(loaded);
+                    _isModified = true;
+                    return new OperationResult(true, $"Dictionary read from file. Total {_words.Count} words");
+                }
             }
             catch (Exception ex) {
-                _console.PrintError($"Failed to load dictionary: {ex.Message}");
-                //_words = new List<Word>();
+                return new OperationResult(false, $"Failed to load dictionary: {ex.Message}");
             }
         }
 
@@ -83,16 +111,21 @@ namespace ConsoleDictionary.Repositories
         /// </summary>
         /// <param name="path"></param>
         /// <returns>true - success, false - failure</returns>
-        public void Save(string path)
+        public OperationResult Save(string path)
         {
             try {
                 var json = JsonSerializer.Serialize(this._words, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(path, json);
-                _console.PrintSuccess("Dictionary saved to file.");
+                return new OperationResult(true, "Dictionary saved to file.");
             }
             catch (Exception ex) {
-                _console.PrintError($"Failed to save dictionary: {ex.Message}");
+                return new OperationResult(false, $"Failed to save dictionary: {ex.Message}");
             }
+        }
+
+        public OperationResult Update(Word oldWord, Word newWord)
+        {
+            throw new NotImplementedException();
         }
     }
 }
