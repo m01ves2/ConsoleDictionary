@@ -4,11 +4,12 @@ using ConsoleDictionary.Helpers;
 using ConsoleDictionary.Interfaces;
 using ConsoleDictionary.Repositories;
 
-namespace ConsoleDictionary
+namespace ConsoleDictionary.UI
 {
     public class ConsoleApp
     {
         private readonly Trainer _trainer;
+        private readonly ConsoleTrainerUI _trainerUI;
         private readonly IWordRepository _repository;
         private readonly IConsole _console;
         private readonly string _path;
@@ -16,69 +17,55 @@ namespace ConsoleDictionary
         {
             var words = FillWordList();
             _repository = new FileWordRepository(words);
+            //if (File.Exists(path))
+            //    _repository.Load(path);
+            //else
+            //    _repository = new FileWordRepository(FillWordList());
+
             _trainer = new Trainer(_repository);
             _console = new ConsoleHelper();
+            _trainerUI = new ConsoleTrainerUI(_trainer, _console);
             _path = path;
         }
 
         public void Run()
-        {   
+        {
             bool isQuit = false;
+            
+            Dictionary<string, Action> commands = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase) {
+                { "a", () => AddWord()},
+                { "d", () => DeleteWord()},
+                { "l", () => ListWords()},
+                { "t", () => Train()},
+                { "s", () => TrainStatistics()},
+                { "r", () => LoadWords()},
+                { "w", () => { if(_repository.IsModified) SaveWords(); } },
+                { "q", () => { if(_repository.IsModified) SaveWords(); isQuit = true; } }
+            };
+
             while (!isQuit) {
                 PrintMenu();
                 string input = _console.ReadLine().Trim().ToLower();
 
-                switch (input) {
-                    case "a": AddWord();
-                        Pause();
-                        break;
-
-                    case "d": DeleteWord();
-                        Pause();
-                        break;
-
-                    case "l": ListWords();
-                        Pause();
-                        break;
-
-                    case "t": Train();
-                        Pause();
-                        break;
-
-                    case "s":
-                        Statistics();
-                        Pause();
-                        break;
-
-                    case "r": LoadWords();
-                        Pause();
-                        break;
-
-                    case "w":
-                        if (_repository.IsModified) {
-                            SaveWords();
-                        }
-                        break;
-
-                    case "q":
-                        if (_repository.IsModified) {
-                            SaveWords();
-                        }
-                        isQuit = true;
-                        break;
-
-                    default:
-                        _console.PrintError("Unexpected input...");
-                        Pause();
-                        break;
+                if (string.IsNullOrEmpty(input)) {
+                    _console.PrintError("Please enter a command.");
+                    continue;
                 }
-            }
 
+                if (commands.TryGetValue(input, out var command)) {
+                    command();
+                }
+                else {
+                    _console.PrintError("Unexpected input...");
+                }
+                
+                Pause();
+            }
         }
 
-        private void Pause()
+        private void Pause(string message = "Press any key to continue...")
         {
-            _console.PrintNormal("Press any key to continue.");
+            _console.PrintWarning(message);
             Console.ReadKey();
         }
 
@@ -112,11 +99,7 @@ namespace ConsoleDictionary
 
             word = new Word(Text, translations, category);
             OperationResult result = _repository.Add(word);
-
-            if(result.Success)
-                _console.PrintSuccess(result.Message);
-            else
-                _console.PrintWarning(result.Message);
+            PrintResult(result);
         }
         private void DeleteWord()
         {
@@ -124,11 +107,7 @@ namespace ConsoleDictionary
             string text = _console.ReadLine();
             if (!string.IsNullOrEmpty(text)) {
                 OperationResult result = _repository.Delete(text);
-
-                if (result.Success)
-                    _console.PrintSuccess(result.Message);
-                else
-                    _console.PrintWarning(result.Message);    
+                PrintResult(result);
             }
             else {
                 _console.PrintError("Empty word. Nothing to delete");
@@ -143,46 +122,48 @@ namespace ConsoleDictionary
         }
         private void Train()
         {
-            _trainer.StartTraining();
+            _trainerUI.Start();
         }
-        private void Statistics()
+        private void TrainStatistics()
         {
-            _trainer.PrintStatistics();
+            _trainerUI.PrintStatistics();
         }
         private void LoadWords()
         {
             OperationResult result = _repository.Load(_path);
-
-            if (result.Success)
-                _console.PrintSuccess(result.Message);
-            else
-                _console.PrintWarning(result.Message);
+            PrintResult(result);
         }
         private void SaveWords()
         {
             _console.PrintWarning("Your dictionary has been changed! Would you like to save it in file (y/n) ?");
             if (_console.ReadLine().ToLower() == "y") {
                 OperationResult result = _repository.Save(_path);
-
-                if(result.Success)
-                    _console.PrintSuccess(result.Message);
-                else
-                    _console.PrintWarning(result.Message);
+                PrintResult(result);
             }
+        }
+
+        private void PrintResult(OperationResult result)
+        {
+            if (result.Success)
+                _console.PrintSuccess(result.Message);
+            else
+                _console.PrintWarning(result.Message);
         }
 
         private void PrintMenu()
         {
             Console.Clear();
-            _console.PrintNormal("Please, choose option:" +
-                                      "\na - add word" +
-                                      "\nd - delete word" +
-                                      "\nl - list of words" +
-                                      "\nt - train" +
-                                      "\ns - get statistics" +
-                                      "\nr - read words from file" +
-                                      "\nw - write words to file" +
-                                      "\nq - quit");
+            _console.PrintNormal("──────────────────────────────\n" +
+                                 "         MAIN MENU\n" + 
+                                 "──────────────────────────────\n" +
+                                 "a - add word\n" +
+                                 "d - delete word\n" +
+                                 "l - list of words\n" +
+                                 "t - train\n" +
+                                 "s - get statistics\n" +
+                                 "r - read words from file\n" +
+                                 "w - write words to file\n" +
+                                 "q - quit\n");
         }
 
         private List<Word> FillWordList()

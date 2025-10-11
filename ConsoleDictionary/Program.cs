@@ -1,4 +1,7 @@
-﻿namespace ConsoleDictionary
+﻿using ConsoleDictionary.Managers;
+using ConsoleDictionary.UI;
+
+namespace ConsoleDictionary
 {
     internal class Program
     {
