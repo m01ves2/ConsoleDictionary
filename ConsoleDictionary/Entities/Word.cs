@@ -1,10 +1,10 @@
 namespace ConsoleDictionary.Entities
 {
-    public record class Word
+    public class Word
     {
-        public string Text { get; init; }
-        public List<string> Translations { get; init; } = new();
-        public string Category { get; init; } = "";
+        public string Text { get; set; }
+        public List<string> Translations { get; set; } = new();
+        public string Category { get; set; }
         public int CorrectCount { get; set; }
         public int WrongCount { get; set; }
 

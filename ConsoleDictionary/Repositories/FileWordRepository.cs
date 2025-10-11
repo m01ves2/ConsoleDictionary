@@ -62,7 +62,7 @@ namespace ConsoleDictionary.Repositories
                 return new OperationResult(true, $"Found and deleted word \"{text}\"");
             }
             else {
-                return new OperationResult(true, "Word \"{text}\" not found");
+                return new OperationResult(false, "Word \"{text}\" not found");
             }
             
         }
@@ -97,7 +97,7 @@ namespace ConsoleDictionary.Repositories
                 else {
                     _words.Clear();
                     _words.AddRange(loaded);
-                    _isModified = true;
+                    _isModified = false;
                     return new OperationResult(true, $"Dictionary read from file. Total {_words.Count} words");
                 }
             }
@@ -125,7 +125,17 @@ namespace ConsoleDictionary.Repositories
 
         public OperationResult Update(Word oldWord, Word newWord)
         {
-            throw new NotImplementedException();
+            Word? w = Find(oldWord.Text);
+            if (w != null) {
+                w.Text = newWord.Text;
+                w.Translations.Clear();
+                w.Translations.AddRange(newWord.Translations);
+                w.Category = newWord.Category;
+                w.CorrectCount = newWord.CorrectCount;
+                w.WrongCount = newWord.WrongCount;
+                return new OperationResult(true, $"word {oldWord.Text} updated. There are {w.Translations.Count} translations");
+            }
+            return new OperationResult(false, $"word {oldWord.Text} not found");
         }
     }
 }

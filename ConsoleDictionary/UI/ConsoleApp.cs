@@ -17,10 +17,10 @@ namespace ConsoleDictionary.UI
         {
             var words = FillWordList();
             _repository = new FileWordRepository(words);
-            //if (File.Exists(path))
-            //    _repository.Load(path);
-            //else
-            //    _repository = new FileWordRepository(FillWordList());
+            if (File.Exists(path))
+                _repository.Load(path);
+            else
+                _repository = new FileWordRepository(FillWordList());
 
             _trainer = new Trainer(_repository);
             _console = new ConsoleHelper();
@@ -35,6 +35,7 @@ namespace ConsoleDictionary.UI
             Dictionary<string, Action> commands = new Dictionary<string, Action>(StringComparer.OrdinalIgnoreCase) {
                 { "a", () => AddWord()},
                 { "d", () => DeleteWord()},
+                { "u", () => UpdateWord()},
                 { "l", () => ListWords()},
                 { "t", () => Train()},
                 { "s", () => TrainStatistics()},
@@ -71,48 +72,80 @@ namespace ConsoleDictionary.UI
 
         private void AddWord()
         {
-            Word word;
+            string? text = ReadNonEmptyInput("Input text of the word to add");
+            if (text == null) return;
 
-            _console.PrintNormal("Input Word Text:");
-            string Text = _console.ReadLine();
-
-            _console.PrintNormal("Input Translations (q - quit):");
-            List<string> translations = new List<string>();
-            int tNum = 0;
-            while(true){
-                tNum++;
-                _console.PrintNormal($"#{tNum}:");
-                string translation = _console.ReadLine();
-
-                if(string.Equals(translation, "q", StringComparison.OrdinalIgnoreCase)) {
-                    break;
-                }
-
-                if (!string.IsNullOrEmpty(translation))
-                    translations.Add(translation);
-                else
-                    _console.PrintError("Empty string. skipped."); 
+            var translations = ReadTranslations();
+            if (translations.Count == 0) {
+                _console.PrintError("No translations entered. Aborting.");
+                return;
             }
 
-            _console.PrintNormal("Input category:");
-            string category = _console.ReadLine();
+            string category = ReadOptionalInput("Input category of the word");
 
-            word = new Word(Text, translations, category);
-            OperationResult result = _repository.Add(word);
+            var word = new Word(text, translations, category);
+            var result = _repository.Add(word);
             PrintResult(result);
         }
         private void DeleteWord()
         {
-            _console.PrintNormal("Input word to delete:");
-            string text = _console.ReadLine();
-            if (!string.IsNullOrEmpty(text)) {
-                OperationResult result = _repository.Delete(text);
-                PrintResult(result);
-            }
-            else {
-                _console.PrintError("Empty word. Nothing to delete");
-            }
+            string? text = ReadNonEmptyInput("Input text of the word to delete");
+            if (text == null) return;
+
+            OperationResult result = _repository.Delete(text);
+            PrintResult(result);
         }
+
+        private void UpdateWord()
+        {
+            string? oldWordText = ReadNonEmptyInput("Input text of the word to update");
+            if (oldWordText == null) return;
+            Word? oldWord = _repository.Find(oldWordText);
+            if(oldWord == null) {
+                _console.PrintError("Word not found. Aborting.");
+                return;
+            }
+
+            string? text = ReadNonEmptyInput("Input new text of the word");
+            if (text == null) return;
+
+            var translations = ReadTranslations();
+            if (translations.Count == 0) {
+                _console.PrintError("No translations entered. Aborting.");
+                return;
+            }
+
+            string category = ReadOptionalInput("Input category of the word");
+
+            var newWord = new Word(text, translations, category);
+            var result = _repository.Update(oldWord, newWord);
+            PrintResult(result);
+        }
+
+        private List<string> ReadTranslations()
+        {
+            var translations = new List<string>();
+            int count = 0;
+
+            _console.PrintNormal("Input translations (q - quit):");
+
+            while (true) {
+                count++;
+                _console.PrintNormal($"#{count}:");
+                string translation = _console.ReadLine().Trim();
+
+                if (string.Equals(translation, "q", StringComparison.OrdinalIgnoreCase))
+                    break;
+
+                if (!string.IsNullOrEmpty(translation))
+                    translations.Add(translation);
+                else
+                    _console.PrintError("Empty string skipped.");
+            }
+
+            return translations;
+        }
+
         private void ListWords()
         {
             IReadOnlyList<Word> words = _repository.GetAll();
@@ -179,6 +212,21 @@ namespace ConsoleDictionary.UI
                 new Word("plane", new List<string> {"самолёт"}),
             };
             return words;
+        }
+        private string? ReadNonEmptyInput(string prompt)
+        {
+            _console.PrintNormal(prompt);
+            string input = _console.ReadLine().Trim();
+            if (string.IsNullOrEmpty(input)) {
+                _console.PrintError("Empty input. Operation cancelled.");
+                return null;
+            }
+            return input;
+        }
+        private string ReadOptionalInput(string prompt, string defaultValue = "")
+        {
+            _console.PrintNormal($"{prompt} (optional, press Enter to skip):");
+            return _console.ReadLine()?.Trim() ?? defaultValue;
         }
     }
 }
