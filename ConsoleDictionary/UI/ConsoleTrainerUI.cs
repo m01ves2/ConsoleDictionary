@@ -24,15 +24,25 @@ namespace ConsoleDictionary.UI
                     break;
                 }
 
-                _console.PrintNormal($"Translate word (q - to quit): {word.Text}");
-                var answer = _console.ReadLine().Trim().ToLower();
+                string answer = AskTranslation(word);
                 if (answer == "q") break;
 
-                if (_trainer.CheckAnswer(word, answer))
-                    _console.PrintSuccess("✅ Right!");
-                else
-                    _console.PrintError($"❌ Wrong. Correct answer(s): {string.Join(", ", word.Translations)}");
+                CheckAndPrintResult(word, answer);
             }
+        }
+
+        private string AskTranslation(Word word)
+        {
+            _console.PrintNormal($"Translate word (q - to quit): {word.Text}");
+            return _console.ReadLine().Trim().ToLower();
+        }
+
+        private void CheckAndPrintResult(Word word, string answer)
+        {
+            if (_trainer.CheckAnswer(word, answer))
+                _console.PrintSuccess("✅ Right!");
+            else
+                _console.PrintError($"❌ Wrong. Correct answer(s): {string.Join(", ", word.Translations)}");
         }
 
         public void PrintStatistics()
